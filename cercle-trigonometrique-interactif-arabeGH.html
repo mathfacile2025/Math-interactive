@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الدائرة المثلثية التفاعلية</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a1a, #1a1a3a);
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow-x: hidden;
+            direction: rtl;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .main-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .side-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .title {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(45deg, #00f5ff, #ff00f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+        }
+
+        .circle-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 20px;
+        }
+
+        canvas {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00f5ff;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+            background: transparent;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            background: linear-gradient(90deg, #00f5ff, #ff00f5);
+            height: 6px;
+            border-radius: 3px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            background: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #00f5ff;
+            -webkit-appearance: none;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 245, 255, 0.7);
+        }
+
+        .value-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 1.1em;
+            border: 1px solid #00f5ff;
+        }
+
+        .info-panel {
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid #00f5ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .quiz-section {
+            background: rgba(255, 0, 245, 0.1);
+            border: 1px solid #ff00f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #00f5ff, #ff00f5);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 245, 255, 0.4);
+        }
+
+        .equation {
+            font-size: 1.2em;
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-right: 4px solid #00f5ff;
+        }
+
+        .email-capture {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffff00;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .email-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ffff00;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            margin: 10px 0;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .circle-container {
+                width: 350px;
+                height: 350px;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-panel">
+            <h1 class="title">الدائرة المثلثية التفاعلية</h1>
+            
+            <div class="circle-container">
+                <canvas id="circleCanvas" width="500" height="500"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <div class="control-label">الزاوية (درجات)</div>
+                    <input type="range" id="angleSlider" min="0" max="360" value="45" step="1">
+                    <div class="value-display" id="angleDisplay">45°</div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">سرعة الحركة</div>
+                    <input type="range" id="speedSlider" min="0" max="5" value="1" step="0.1">
+                    <div class="value-display" id="speedDisplay">1x</div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">نمط العرض</div>
+                    <button onclick="toggleMode()">راديان/درجات</button>
+                    <button onclick="toggleAnimation()">▶️ تحريك</button>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">الدوال المعروضة</div>
+                    <button onclick="toggleSin()">sin(θ)</button>
+                    <button onclick="toggleCos()">cos(θ)</button>
+                    <button onclick="toggleTan()">tan(θ)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="info-panel">
+                <h3>📊 القيم الآنية</h3>
+                <div class="equation" id="sinValue">sin(45°) = 0.707</div>
+                <div class="equation" id="cosValue">cos(45°) = 0.707</div>
+                <div class="equation" id="tanValue">tan(45°) = 1.000</div>
+                <div class="equation" id="radiansValue">45° = 0.785 راديان</div>
+            </div>
+
+            <div class="quiz-section">
+                <h3>🎯 اختبار سريع</h3>
+                <div id="quizQuestion">ما قيمة sin(90°) ؟</div>
+                <button onclick="checkAnswer(1)">1</button>
+                <button onclick="checkAnswer(0)">0</button>
+                <button onclick="checkAnswer(-1)">-1</button>
+                <div id="quizResult"></div>
+                <div id="score">النتيجة: 0/0</div>
+            </div>
+
+            <div class="email-capture">
+                <h3>📧 احصل على دروس جديدة</h3>
+                <p>5 دروس تفاعلية جديدة كل أسبوع!</p>
+                <input type="email" class="email-input" placeholder="بريدك الإلكتروني">
+                <button onclick="subscribeEmail()" style="width: 100%; margin-top: 10px;">🔔 اشترك مجاناً</button>
+            </div>
+
+            <div class="info-panel">
+                <h3>💡 نصيحة اليوم</h3>
+                <p id="tip">حرك النقطة على الدائرة أو استخدم المتحكمات لاستكشاف العلاقات المثلثية!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let angle = 45;
+        let isAnimating = false;
+        let animationSpeed = 1;
+        let showSin = true;
+        let showCos = true;
+        let showTan = false;
+        let useRadians = false;
+        let quizScore = 0;
+        let quizTotal = 0;
+        
+        // Audio context pour effets sonores
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep(frequency = 440, duration = 100) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        // Synthèse vocale arabe
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ar-SA';
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                utterance.volume = 0.8;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Initialisation des canvas
+        const circleCanvas = document.getElementById('circleCanvas');
+        const circleCtx = circleCanvas.getContext('2d');
+
+        // Event listeners
+        document.getElementById('angleSlider').addEventListener('input', (e) => {
+            angle = parseFloat(e.target.value);
+            updateDisplay();
+            playBeep(220 + angle * 2, 50);
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = parseFloat(e.target.value);
+            document.getElementById('speedDisplay').textContent = animationSpeed + 'x';
+        });
+
+        // Interaction tactile sur le cercle
+        circleCanvas.addEventListener('click', (e) => {
+            const rect = circleCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left - 250;
+            const y = e.clientY - rect.top - 250;
+            
+            angle = Math.atan2(-y, x) * 180 / Math.PI;
+            if (angle < 0) angle += 360;
+            
+            document.getElementById('angleSlider').value = angle;
+            updateDisplay();
+            playBeep(300, 100);
+        });
+
+        // Animation automatique
+        let animationId;
+        function toggleAnimation() {
+            if (isAnimating) {
+                clearInterval(animationId);
+                isAnimating = false;
+                document.querySelector('button[onclick="toggleAnimation()"]').textContent = '▶️ تحريك';
+            } else {
+                animationId = setInterval(() => {
+                    angle = (angle + animationSpeed) % 360;
+                    document.getElementById('angleSlider').value = angle;
+                    updateDisplay();
+                }, 50);
+                isAnimating = true;
+                document.querySelector('button[onclick="toggleAnimation()"]').textContent = '⏸️ إيقاف';
+            }
+            playBeep(440, 150);
+        }
+
+        function toggleMode() {
+            useRadians = !useRadians;
+            updateDisplay();
+            playBeep(330, 100);
+        }
+
+        function toggleSin() {
+            showSin = !showSin;
+            updateDisplay();
+            playBeep(440, 80);
+        }
+
+        function toggleCos() {
+            showCos = !showCos;
+            updateDisplay();
+            playBeep(550, 80);
+        }
+
+        function toggleTan() {
+            showTan = !showTan;
+            updateDisplay();
+            playBeep(660, 80);
+        }
+
+        // Fonction principale de dessin
+        function drawCircle() {
+            circleCtx.clearRect(0, 0, 500, 500);
+            
+            const centerX = 250;
+            const centerY = 250;
+            const radius = 180;
+            
+            // Arrière-plan avec grille
+            circleCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            circleCtx.lineWidth = 1;
+            for (let i = -200; i <= 200; i += 20) {
+                circleCtx.beginPath();
+                circleCtx.moveTo(centerX + i, 50);
+                circleCtx.lineTo(centerX + i, 450);
+                circleCtx.stroke();
+                
+                circleCtx.beginPath();
+                circleCtx.moveTo(50, centerY + i);
+                circleCtx.lineTo(450, centerY + i);
+                circleCtx.stroke();
+            }
+
+            // Axes principaux
+            circleCtx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            circleCtx.lineWidth = 2;
+            circleCtx.beginPath();
+            circleCtx.moveTo(50, centerY);
+            circleCtx.lineTo(450, centerY);
+            circleCtx.stroke();
+            
+            circleCtx.beginPath();
+            circleCtx.moveTo(centerX, 50);
+            circleCtx.lineTo(centerX, 450);
+            circleCtx.stroke();
+
+            // Cercle principal
+            circleCtx.strokeStyle = '#00f5ff';
+            circleCtx.lineWidth = 3;
+            circleCtx.beginPath();
+            circleCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            circleCtx.stroke();
+
+            // Point mobile
+            const radAngle = angle * Math.PI / 180;
+            const pointX = centerX + radius * Math.cos(radAngle);
+            const pointY = centerY - radius * Math.sin(radAngle);
+
+            // Ligne du centre au point
+            circleCtx.strokeStyle = '#ff00f5';
+            circleCtx.lineWidth = 2;
+            circleCtx.beginPath();
+            circleCtx.moveTo(centerX, centerY);
+            circleCtx.lineTo(pointX, pointY);
+            circleCtx.stroke();
+
+            // Projections
+            if (showSin) {
+                circleCtx.strokeStyle = '#ff4444';
+                circleCtx.lineWidth = 2;
+                circleCtx.setLineDash([5, 5]);
+                circleCtx.beginPath();
+                circleCtx.moveTo(pointX, pointY);
+                circleCtx.lineTo(centerX, pointY);
+                circleCtx.stroke();
+            }
+
+            if (showCos) {
+                circleCtx.strokeStyle = '#44ff44';
+                circleCtx.lineWidth = 2;
+                circleCtx.setLineDash([5, 5]);
+                circleCtx.beginPath();
+                circleCtx.moveTo(pointX, pointY);
+                circleCtx.lineTo(pointX, centerY);
+                circleCtx.stroke();
+            }
+
+            circleCtx.setLineDash([]);
+
+            // Point principal
+            circleCtx.fillStyle = '#ffffff';
+            circleCtx.beginPath();
+            circleCtx.arc(pointX, pointY, 8, 0, 2 * Math.PI);
+            circleCtx.fill();
+            circleCtx.strokeStyle = '#ff00f5';
+            circleCtx.lineWidth = 3;
+            circleCtx.stroke();
+
+            // Arc d'angle
+            circleCtx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+            circleCtx.lineWidth = 2;
+            circleCtx.beginPath();
+            circleCtx.arc(centerX, centerY, 40, 0, -radAngle, true);
+            circleCtx.stroke();
+
+            // Étiquettes des axes (en arabe)
+            circleCtx.fillStyle = 'white';
+            circleCtx.font = '16px Arial';
+            circleCtx.fillText('cos(θ)', 420, centerY - 10);
+            circleCtx.fillText('sin(θ)', centerX + 10, 70);
+            
+            // Marqueurs d'angles importants
+            const importantAngles = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
+            circleCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            circleCtx.font = '12px Arial';
+            
+            importantAngles.forEach(deg => {
+                const rad = deg * Math.PI / 180;
+                const x = centerX + (radius + 15) * Math.cos(rad);
+                const y = centerY - (radius + 15) * Math.sin(rad);
+                circleCtx.fillText(deg + '°', x - 10, y + 5);
+            });
+        }
+
+        function updateDisplay() {
+            const radAngle = angle * Math.PI / 180;
+            const sinValue = Math.sin(radAngle);
+            const cosValue = Math.cos(radAngle);
+            const tanValue = Math.tan(radAngle);
+
+            // Mise à jour de l'affichage
+            document.getElementById('angleDisplay').textContent = 
+                useRadians ? (radAngle).toFixed(3) + ' راديان' : angle.toFixed(1) + '°';
+            
+            document.getElementById('sinValue').textContent = 
+                `sin(${useRadians ? (radAngle).toFixed(2) + ' راديان' : angle.toFixed(1) + '°'}) = ${sinValue.toFixed(3)}`;
+            
+            document.getElementById('cosValue').textContent = 
+                `cos(${useRadians ? (radAngle).toFixed(2) + ' راديان' : angle.toFixed(1) + '°'}) = ${cosValue.toFixed(3)}`;
+            
+            document.getElementById('tanValue').textContent = 
+                `tan(${useRadians ? (radAngle).toFixed(2) + ' راديان' : angle.toFixed(1) + '°'}) = ${Math.abs(tanValue) > 100 ? '∞' : tanValue.toFixed(3)}`;
+            
+            document.getElementById('radiansValue').textContent = 
+                `${angle.toFixed(1)}° = ${radAngle.toFixed(3)} راديان`;
+
+            // Redessiner
+            drawCircle();
+            
+            // Astuce contextuelle
+            updateTip();
+        }
+
+        function updateTip() {
+            const tips = [
+                "قيم sin و cos دائماً بين -1 و 1",
+                "عند 45°، sin و cos متساويان: √2/2 ≈ 0.707", 
+                "عند 0°، cos = 1 و sin = 0",
+                "عند 90°، sin = 1 و cos = 0",
+                "الظل = الجيب ÷ جيب التمام",
+                "دورة كاملة = 360° = 2π راديان"
+            ];
+            
+            const tipIndex = Math.floor(angle / 60) % tips.length;
+            document.getElementById('tip').textContent = tips[tipIndex];
+        }
+
+        // Quiz système
+        const quizQuestions = [
+            { question: "ما قيمة sin(90°) ؟", answers: [1, 0, -1], correct: 0 },
+            { question: "ما قيمة cos(0°) ؟", answers: [1, 0, -1], correct: 0 },
+            { question: "في أي زاوية sin = cos ؟", answers: ["45°", "30°", "60°"], correct: 0 },
+            { question: "كم راديان في الدورة الكاملة ؟", answers: ["π", "2π", "π/2"], correct: 1 }
+        ];
+        
+        let currentQuiz = 0;
+
+        function generateQuiz() {
+            const quiz = quizQuestions[currentQuiz % quizQuestions.length];
+            document.getElementById('quizQuestion').textContent = quiz.question;
+            
+            const buttons = document.querySelectorAll('.quiz-section button[onclick^="checkAnswer"]');
+            buttons.forEach((btn, i) => {
+                btn.textContent = quiz.answers[i];
+                btn.onclick = () => checkAnswer(i);
+            });
+        }
+
+        function checkAnswer(selected) {
+            const quiz = quizQuestions[currentQuiz % quizQuestions.length];
+            quizTotal++;
+            
+            if (selected === quiz.correct) {
+                quizScore++;
+                document.getElementById('quizResult').textContent = '✅ صحيح !';
+                document.getElementById('quizResult').style.color = '#44ff44';
+                playBeep(660, 200);
+            } else {
+                document.getElementById('quizResult').textContent = '❌ خطأ، الإجابة الصحيحة: ' + quiz.answers[quiz.correct];
+                document.getElementById('quizResult').style.color = '#ff4444';
+                playBeep(220, 300);
+            }
+            
+            document.getElementById('score').textContent = `النتيجة: ${quizScore}/${quizTotal}`;
+            
+            setTimeout(() => {
+                currentQuiz++;
+                generateQuiz();
+                document.getElementById('quizResult').textContent = '';
+            }, 2000);
+        }
+
+        function subscribeEmail() {
+            const emailInput = document.querySelector('.email-input');
+            const email = emailInput.value;
+            
+            if (email && email.includes('@')) {
+                alert('شكراً لك! ستتلقى دروساً تفاعلية جديدة قريباً!');
+                emailInput.value = '';
+                playBeep(880, 400);
+                speak("شكراً لاشتراكك! ستحصل على دروس رياضية تفاعلية جديدة كل أسبوع");
+            } else {
+                alert('يرجى إدخال بريد إلكتروني صحيح');
+                playBeep(220, 200);
+            }
+        }
+
+        // Initialisation
+        updateDisplay();
+        generateQuiz();
+
+        // Message de bienvenue audio
+        setTimeout(() => {
+            speak("أهلاً وسهلاً! اكتشف أسرار الدائرة المثلثية بطريقة تفاعلية ممتعة");
+        }, 1000);
+
+        // Gestion des erreurs audio
+        circleCanvas.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
